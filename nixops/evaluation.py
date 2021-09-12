@@ -82,6 +82,7 @@ def eval(
     nix_args: Dict[str, Any] = {},
     attr: Optional[str] = None,
     extra_flags: List[str] = [],
+    eval_only: bool = True,
     # Non-propagated args
     stderr: Optional[TextIO] = None,
 ) -> Any:
@@ -90,8 +91,13 @@ def eval(
     if not networkExpr.is_flake:
         exprs.append(networkExpr.network)
 
+    eval_only_flags: List[str] = (
+        list(("--eval", "--json", "--strict")) if eval_only else list()
+    )
+
     argv: List[str] = (
-        ["nix-instantiate", "--eval-only", "--json", "--strict", "--show-trace"]
+        ["nix-instantiate", "--show-trace"]
+        + eval_only_flags
         + [os.path.join(get_expr_path(), "eval-machine-info.nix")]
         + ["-I", "nixops=" + get_expr_path()]
         + [
@@ -121,10 +127,9 @@ def eval(
     if networkExpr.is_flake:
         argv.extend(["--allowed-uris", get_expr_path()])
         argv.extend(["--argstr", "flakeUri", networkExpr.network])
-
     try:
         ret = subprocess.check_output(argv, stderr=stderr, text=True)
-        return json.loads(ret)
+        return json.loads(ret) if eval_only else ret.rstrip()
     except OSError as e:
         raise Exception("unable to run ‘nix-instantiate’: {0}".format(e))
     except subprocess.CalledProcessError:

@@ -451,6 +451,7 @@ class Deployment:
         attr: Optional[str] = None,
         include_physical: bool = False,
         checkConfigurationOptions: bool = True,
+        eval_only: bool = True,
     ) -> Any:
 
         exprs: List[str] = []
@@ -474,18 +475,21 @@ class Deployment:
             nix_args=nix_args,
             attr=attr,
             extra_flags=self.extra_nix_eval_flags,
+            eval_only=eval_only,
             # Non-propagated args
             stderr=self.logger.log_file,
         )
 
     def evaluate_option_value(
         self, machine_name: str, option_name: str, include_physical: bool = False,
+        eval_only: bool = True,
     ) -> Any:
         """Evaluate a single option of a single machine in the deployment specification."""
         return self.eval(
             checkConfigurationOptions=False,
             include_physical=include_physical,
             attr="nodes.{0}.config.{1}".format(machine_name, option_name),
+            eval_only=eval_only,
         )
 
     def get_arguments(self) -> Any:
